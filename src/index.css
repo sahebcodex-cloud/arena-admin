@@ -1,0 +1,57 @@
+@import "tailwindcss";
+
+@theme {
+  --color-prime: #a855f7;
+  --color-accent-pink: #d946ef;
+  --color-accent-blue: #3b82f6;
+  --color-glass: rgba(255, 255, 255, 0.03);
+  --color-glass-border: rgba(255, 255, 255, 0.1);
+  --color-glow-purple: #7c3aed;
+  --color-glow-blue: #2563eb;
+}
+
+@layer base {
+  body {
+    @apply m-0 p-0 font-sans text-white bg-[#0b0d11];
+    cursor: default;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/5 backdrop-blur-[20px] border border-white/10 rounded-[2.5rem] shadow-2xl;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  }
+
+  .glass-sidebar {
+    @apply bg-white/[0.03] backdrop-blur-2xl border-r border-white/5;
+  }
+
+  .glass-input {
+    @apply w-full px-5 py-4 bg-black/20 border border-white/10 rounded-2xl text-white placeholder-white/20 focus:outline-none focus:ring-1 focus:ring-prime/50 focus:bg-black/30 transition-all duration-300;
+  }
+
+  .btn-premium {
+    @apply px-6 py-4 bg-gradient-to-r from-[#8b5cf6] to-[#3b82f6] hover:from-[#a78bfa] hover:to-[#60a5fa] text-white font-bold rounded-2xl shadow-lg transform active:scale-[0.98] transition-all duration-300 hover:shadow-blue-500/20;
+  }
+
+  .text-glow {
+    text-shadow: 0 0 10px rgba(124, 58, 237, 0.5);
+  }
+}
+
+/* Cosmic Background Elements */
+.cosmic-orb {
+  @apply absolute rounded-full blur-[100px] opacity-20 pointer-events-none;
+}
+
+@keyframes float {
+  0% { transform: translate(0, 0); }
+  50% { transform: translate(-20px, 30px); }
+  100% { transform: translate(0, 0); }
+}
+
+.animate-float {
+  animation: float 20s infinite ease-in-out;
+}
+
