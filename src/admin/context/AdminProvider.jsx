@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import authService from '../services/authService';
 import { AdminContext } from './AdminContext';
 
@@ -11,6 +12,7 @@ export const AdminProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [dashboardData, setDashboardData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   const refreshData = useCallback(() => {
     setUser(authService.getUser());
@@ -45,6 +47,15 @@ export const AdminProvider = ({ children }) => {
   const login = useCallback(async (email, password) => {
     const response = await authService.login(email, password);
     refreshData();
+    
+    // Immediately fetch fresh stats so the dashboard populates right away
+    try {
+      const freshOverview = await authService.getOverview();
+      setDashboardData(prev => ({ ...prev, stats: freshOverview.kpis || freshOverview }));
+    } catch (err) {
+      console.error('Failed to fetch dashboard data after login:', err);
+    }
+    
     return response;
   }, [refreshData]);
 
@@ -53,7 +64,8 @@ export const AdminProvider = ({ children }) => {
     localStorage.removeItem('admin_dashboard_data');
     setUser(null);
     setDashboardData(null);
-  }, []);
+    navigate('/', { replace: true });
+  }, [navigate]);
 
   const contextValue = useMemo(() => ({
     user, dashboardData, loading, login, logout, refreshData

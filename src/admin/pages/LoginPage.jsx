@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import CosmicBackground from '../components/CosmicBackground';
@@ -6,12 +6,18 @@ import { useAdmin } from '../context/AdminContext';
 import logoImg from '../../assets/logo.png';
 
 const LoginPage = ({ onLogin }) => {
-  const { login } = useAdmin();
+  const { login, user, loading: authLoading } = useAdmin();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!authLoading && user) {
+      onLogin();
+    }
+  }, [user, authLoading, onLogin]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();

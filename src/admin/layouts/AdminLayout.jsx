@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useAdmin } from '../context/AdminContext';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import CosmicBackground from '../components/CosmicBackground';
@@ -13,6 +14,7 @@ import DataExplorerPage from '../pages/DataExplorerPage';
 import SettingsPage from '../pages/SettingsPage';
 
 const AdminLayout = () => {
+  const { user } = useAdmin();
   const [activeTab, setActiveTab] = useState('dashboard');
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
