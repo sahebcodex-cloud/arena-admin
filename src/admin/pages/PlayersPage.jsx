@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
-import { Search, Filter, MoreVertical, Copy, CheckCircle2, X, Gamepad2, Coins, Zap, ShoppingBag, Trash2, ShieldAlert, Loader2, Save, User, Mail, Phone, Image, Edit2, Activity } from 'lucide-react';
+import { Search, Filter, MoreVertical, Copy, CheckCircle2, X, Gamepad2, Coins, Zap, ShoppingBag, Trash2, ShieldAlert, Loader2, Save, User, Mail, Phone, Image, Edit2, Activity, Gift, Gem, Crown } from 'lucide-react';
 import { motion as M, AnimatePresence } from 'framer-motion';
 import authService from '../services/authService';
 
@@ -125,6 +125,11 @@ const PlayersPage = () => {
   const [updating, setUpdating] = useState(false);
   const [updateMsg, setUpdateMsg] = useState('');
 
+  // Gift modal state
+  const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
+  const [giftForm, setGiftForm] = useState({ silver: 0, gold: 0, diamond: 0 });
+  const [gifting, setGifting] = useState(false);
+
   const fetchPlayers = useCallback(async (currentPage = 1, search = '', append = false) => {
     try {
       if (append) setIsLoadingMore(true);
@@ -192,11 +197,65 @@ const PlayersPage = () => {
     setTimeout(() => setCopiedToken(null), 2000);
   }, []);
 
-  const handleDeleteUser = (id) => {
-    if (window.confirm("Are you sure you want to delete this player? This action cannot be undone.")) {
-      console.log(`Deleting user with ID: ${id}`);
-      setSelectedPlayer(null);
-      // In a real app, you'd trigger an API call here
+  const handleDeleteUser = async (id) => {
+    if (!id) return;
+    if (window.confirm("Are you sure you want to delete this player? This action cannot be undone and will wipe all their data.")) {
+      try {
+        setUpdating(true); // Reuse updating state for feedback
+        setUpdateMsg('Deleting player...');
+
+        await authService.deleteUser(id);
+
+        // Remove from local list
+        setPlayers(prev => prev.filter(p => p.id !== id));
+
+        // Close modal and show success
+        closeModal();
+        alert('User deleted successfully.');
+      } catch (err) {
+        setUpdateMsg(`❌ Delete failed: ${err.message}`);
+        console.error('Delete error:', err);
+      } finally {
+        setUpdating(false);
+      }
+    }
+  };
+
+  const handleGiftSubmit = async () => {
+    const id = safeGet(playerDetails || selectedPlayer, 'id', ['_id', 'userId'], '');
+    if (!id) return;
+
+    try {
+      setGifting(true);
+      const payload = {};
+      Object.entries(giftForm).forEach(([key, val]) => {
+        if (val > 0) payload[key] = Number(val);
+      });
+
+      if (Object.keys(payload).length === 0) {
+        alert("Please enter at least one value to gift.");
+        return;
+      }
+
+      await authService.giftUser(id, payload);
+      
+      if (playerDetails) {
+        const updatedWallets = [...(playerDetails.wallets || [])];
+        if (updatedWallets[0]) {
+          Object.entries(payload).forEach(([key, val]) => {
+            updatedWallets[0][key] = (Number(updatedWallets[0][key]) || 0) + val;
+          });
+        }
+        setPlayerDetails({ ...playerDetails, wallets: updatedWallets });
+      }
+
+      alert("Gift sent successfully!");
+      setIsGiftModalOpen(false);
+      setGiftForm({ silver: 0, gold: 0, diamond: 0 });
+    } catch (err) {
+      alert(`Gifting failed: ${err.message}`);
+    } finally {
+      setGifting(false);
     }
   };
 
@@ -240,7 +299,7 @@ const PlayersPage = () => {
     setUpdateMsg('');
     try {
       const payload = {};
-      
+
       // Ensure we send both variants (name/username, contact/phone) 
       // just in case the Swagger API expects the backend database schema names.
       if (editForm.name) {
@@ -531,45 +590,61 @@ const PlayersPage = () => {
                           </div>
                         </div>
 
-                        {/* Detailed Stats */}
-                        <div>
-                          <h4 className="text-[10px] font-bold text-white/60 uppercase tracking-widest mb-2 flex items-center gap-1.5">
-                            <Activity size={12} className="text-prime" /> Player Statistics
-                          </h4>
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-1.5">
-                            <div className="p-1.5 sm:p-2 bg-gradient-to-br from-blue-500/10 to-transparent border border-blue-500/20 rounded-lg text-center group hover:from-blue-500/20 transition-all flex flex-col items-center justify-center">
-                              <div className="p-1.5 bg-blue-500/10 rounded-md mb-1 group-hover:scale-110 transition-transform flex items-center justify-center">
-                                <Gamepad2 size={14} className="text-blue-400" />
+                        {/* Player Statistics & Currencies Combined */}
+                        <div className="space-y-4">
+                          <div>
+                            <h4 className="text-[10px] font-bold text-white/60 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                              <Activity size={12} className="text-prime" /> Statistics & Performance
+                            </h4>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5">
+                              <div className="p-2 bg-gradient-to-br from-blue-500/10 to-transparent border border-blue-500/20 rounded-lg text-center group">
+                                <p className="text-xs font-bold text-white truncate">{safeGet(playerDetails || selectedPlayer, 'game', ['gameName'], 'ArenaX')}</p>
+                                <p className="text-[8px] text-blue-400/50 uppercase tracking-widest font-bold mt-0.5">Primary Game</p>
                               </div>
-                              <p className="text-xs font-bold text-white truncate w-full">{safeGet(playerDetails || selectedPlayer, 'game', ['gameName'], 'ArenaX')}</p>
-                              <p className="text-[8px] text-blue-400/50 uppercase tracking-widest font-bold mt-0.5">Game</p>
+                              <div className="p-2 bg-gradient-to-br from-emerald-500/10 to-transparent border border-emerald-500/20 rounded-lg text-center group">
+                                <p className="text-xs font-bold text-white truncate">
+                                  {playerDetails?.statsSummary?.played ?? playerDetails?.stats?.reduce((a, s) => a + (s.played || 0), 0) ?? 0}
+                                </p>
+                                <p className="text-[8px] text-emerald-400/50 uppercase tracking-widest font-bold mt-0.5">Total Matches</p>
+                              </div>
+                              <div className="p-2 bg-gradient-to-br from-purple-500/10 to-transparent border border-purple-500/20 rounded-lg text-center group">
+                                <p className="text-xs font-bold text-white truncate">
+                                  {playerDetails?.purchaseSummary?.totalPurchases ?? playerDetails?.purchases?.length ?? 0}
+                                </p>
+                                <p className="text-[8px] text-purple-400/50 uppercase tracking-widest font-bold mt-0.5">Purchases</p>
+                              </div>
                             </div>
-                            <div className="p-1.5 sm:p-2 bg-gradient-to-br from-emerald-500/10 to-transparent border border-emerald-500/20 rounded-lg text-center group hover:from-emerald-500/20 transition-all flex flex-col items-center justify-center">
-                              <div className="p-1.5 bg-emerald-500/10 rounded-md mb-1 group-hover:scale-110 transition-transform flex items-center justify-center">
-                                <Zap size={14} className="text-emerald-400" />
+                          </div>
+
+                          <div>
+                            <h4 className="text-[10px] font-bold text-white/60 uppercase tracking-widest mb-2 flex items-center gap-1.5">
+                              <Coins size={12} className="text-yellow-400" /> Wallet Balances
+                            </h4>
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                              {/* Diamond */}
+                              <div className="p-2 bg-white/[0.02] border border-white/5 rounded-lg flex flex-col items-center justify-center gap-1 group hover:bg-white/[0.04] transition-all">
+                                <Gem size={14} className="text-blue-400" />
+                                <p className="text-xs font-bold text-white">{playerDetails?.wallets?.[0]?.diamond ?? playerDetails?.wallet?.diamond ?? 0}</p>
+                                <p className="text-[7px] text-white/30 uppercase tracking-widest font-bold">Diamond</p>
                               </div>
-                              <p className="text-xs font-bold text-white truncate w-full">
-                                {playerDetails?.statsSummary?.played ?? playerDetails?.stats?.reduce((a, s) => a + (s.played || 0), 0) ?? 0}
-                              </p>
-                              <p className="text-[8px] text-emerald-400/50 uppercase tracking-widest font-bold mt-0.5">Matches</p>
-                            </div>
-                            <div className="p-1.5 sm:p-2 bg-gradient-to-br from-yellow-500/10 to-transparent border border-yellow-500/20 rounded-lg text-center group hover:from-yellow-500/20 transition-all flex flex-col items-center justify-center">
-                              <div className="p-1.5 bg-yellow-500/10 rounded-md mb-1 group-hover:scale-110 transition-transform flex items-center justify-center">
-                                <Coins size={14} className="text-yellow-400" />
+                              {/* Gold */}
+                              <div className="p-2 bg-white/[0.02] border border-white/5 rounded-lg flex flex-col items-center justify-center gap-1 group hover:bg-white/[0.04] transition-all">
+                                <Crown size={14} className="text-yellow-500" />
+                                <p className="text-xs font-bold text-white">{playerDetails?.wallets?.[0]?.gold ?? playerDetails?.wallet?.gold ?? 0}</p>
+                                <p className="text-[7px] text-white/30 uppercase tracking-widest font-bold">Gold</p>
                               </div>
-                              <p className="text-xs font-bold text-white truncate w-full">
-                                {playerDetails?.wallet?.coins ?? playerDetails?.wallets?.[0]?.coins ?? safeGet(playerDetails || selectedPlayer, 'coins', ['balance', 'currency'], '0')}
-                              </p>
-                              <p className="text-[8px] text-yellow-400/50 uppercase tracking-widest font-bold mt-0.5">Coins</p>
-                            </div>
-                            <div className="p-1.5 sm:p-2 bg-gradient-to-br from-purple-500/10 to-transparent border border-purple-500/20 rounded-lg text-center group hover:from-purple-500/20 transition-all flex flex-col items-center justify-center">
-                              <div className="p-1.5 bg-purple-500/10 rounded-md mb-1 group-hover:scale-110 transition-transform flex items-center justify-center">
-                                <ShoppingBag size={14} className="text-purple-400" />
+                              {/* Silver */}
+                              <div className="p-2 bg-white/[0.02] border border-white/5 rounded-lg flex flex-col items-center justify-center gap-1 group hover:bg-white/[0.04] transition-all">
+                                <Coins size={14} className="text-slate-400" />
+                                <p className="text-xs font-bold text-white">{playerDetails?.wallets?.[0]?.silver ?? playerDetails?.wallet?.silver ?? 0}</p>
+                                <p className="text-[7px] text-white/30 uppercase tracking-widest font-bold">Silver</p>
                               </div>
-                              <p className="text-xs font-bold text-white truncate w-full">
-                                {playerDetails?.purchaseSummary?.totalAmount ?? playerDetails?.purchases?.reduce((a, p) => a + (p.amount || 0), 0) ?? 0}
-                              </p>
-                              <p className="text-[8px] text-purple-400/50 uppercase tracking-widest font-bold mt-0.5">Purchases</p>
+                              {/* Coins */}
+                              <div className="p-2 bg-white/[0.02] border border-white/5 rounded-lg flex flex-col items-center justify-center gap-1 group hover:bg-white/[0.04] transition-all">
+                                <Zap size={14} className="text-prime" />
+                                <p className="text-xs font-bold text-white">{playerDetails?.wallets?.[0]?.coins ?? playerDetails?.wallet?.coins ?? 0}</p>
+                                <p className="text-[7px] text-white/30 uppercase tracking-widest font-bold">Coins</p>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -584,6 +659,17 @@ const PlayersPage = () => {
                           </div>
                         </div>
                         <button
+                          onClick={() => {
+                            setGiftForm({ silver: 0, gold: 0, diamond: 0 });
+                            setIsGiftModalOpen(true);
+                          }}
+                          className="w-full flex items-center justify-center gap-1.5 py-2.5 bg-prime/10 border border-prime/20 text-prime rounded-lg text-[11px] font-bold hover:bg-prime hover:text-white transition-all duration-300 group mb-2"
+                        >
+                          <Gift size={14} className="group-hover:scale-110 transition-transform" />
+                          Gift Player Items
+                        </button>
+
+                        <button
                           onClick={() => handleDeleteUser(safeGet(playerDetails || selectedPlayer, 'id', ['_id', 'userId'], ''))}
                           className="w-full flex items-center justify-center gap-1.5 py-2 bg-red-500/10 border border-red-500/20 text-red-400 rounded-lg text-[11px] font-bold hover:bg-red-500 hover:text-white transition-all duration-300 group"
                         >
@@ -595,6 +681,118 @@ const PlayersPage = () => {
                   )}
                 </div>
               )}
+            </M.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Gift Items Modal */}
+      <AnimatePresence>
+        {isGiftModalOpen && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+            <M.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsGiftModalOpen(false)}
+              className="absolute inset-0 bg-black/80 backdrop-blur-sm"
+            />
+            <M.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-sm bg-[#121212] border border-white/10 rounded-2xl overflow-hidden shadow-2xl"
+            >
+              <div className="p-4 border-b border-white/5 flex items-center justify-between bg-gradient-to-r from-prime/10 to-transparent">
+                <div className="flex items-center gap-2">
+                  <div className="p-2 bg-prime/10 rounded-lg">
+                    <Gift size={18} className="text-prime" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-white leading-none">Gift Player Items</h3>
+                    <p className="text-[10px] text-white/40 mt-1">Add Gold, Silver, or Diamonds</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setIsGiftModalOpen(false)}
+                  className="p-1.5 hover:bg-white/5 rounded-lg transition-colors text-white/40 hover:text-white"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+
+              <div className="p-5 space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-blue-400 uppercase tracking-widest flex items-center gap-1">
+                      <Gem size={10} /> Diamond
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={giftForm.diamond || ''}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, '');
+                        setGiftForm({...giftForm, diamond: val ? parseInt(val) : 0});
+                      }}
+                      placeholder="0"
+                      className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-prime/50 focus:bg-white/[0.05] transition-all placeholder:text-white/10"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-yellow-500 uppercase tracking-widest flex items-center gap-1">
+                      <Crown size={10} /> Gold
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={giftForm.gold || ''}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, '');
+                        setGiftForm({...giftForm, gold: val ? parseInt(val) : 0});
+                      }}
+                      placeholder="0"
+                      className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-prime/50 focus:bg-white/[0.05] transition-all placeholder:text-white/10"
+                    />
+                  </div>
+                  <div className="space-y-1.5 col-span-2">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1">
+                      <Coins size={10} /> Silver
+                    </label>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={giftForm.silver || ''}
+                      onChange={(e) => {
+                        const val = e.target.value.replace(/\D/g, '');
+                        setGiftForm({...giftForm, silver: val ? parseInt(val) : 0});
+                      }}
+                      placeholder="0"
+                      className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-prime/50 focus:bg-white/[0.05] transition-all placeholder:text-white/10"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-2">
+                  <button
+                    disabled={gifting}
+                    onClick={handleGiftSubmit}
+                    className="w-full py-3 bg-prime text-black rounded-xl text-xs font-bold hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50 disabled:pointer-events-none flex items-center justify-center gap-2 shadow-lg shadow-prime/20"
+                  >
+                    {gifting ? (
+                      <>
+                        <Loader2 size={16} className="animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <Gift size={16} />
+                        Send Gift to Player
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
             </M.div>
           </div>
         )}
