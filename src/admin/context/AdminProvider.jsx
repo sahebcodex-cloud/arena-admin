@@ -60,8 +60,7 @@ export const AdminProvider = ({ children }) => {
   }, [refreshData]);
 
   const logout = useCallback(() => {
-    authService.logout();
-    localStorage.removeItem('admin_dashboard_data');
+    authService.logout(); // clears sessionStorage (all auth data for this tab)
     setUser(null);
     setDashboardData(null);
     navigate('/', { replace: true });
