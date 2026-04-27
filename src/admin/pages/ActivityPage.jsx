@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Activity, Gamepad2, ShoppingBag, Gift, UserPlus, Bell, Loader2 } from 'lucide-react';
+import { Activity, Gamepad2, ShoppingBag, Gift, UserPlus, Bell, Loader2, ChevronDown } from 'lucide-react';
+import { motion as M, AnimatePresence } from 'framer-motion';
 import authService from '../services/authService';
 
 const typeIcons = {
@@ -27,6 +28,29 @@ const ActivityPage = () => {
   const [hasMore, setHasMore] = useState(true);
   const [filterType, setFilterType] = useState('');
   const limit = 15;
+
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef(null);
+
+  const filterOptions = [
+    { id: '', label: 'All Events' },
+    { id: 'game', label: 'Games' },
+    { id: 'purchase', label: 'Purchases' },
+    { id: 'reward', label: 'Rewards' },
+    { id: 'friend', label: 'Friends' },
+    { id: 'notification', label: 'Notifications' },
+  ];
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const fetchFeed = useCallback(async (currentPage = 1, append = false) => {
     if (append) setIsLoadingMore(true);
@@ -87,25 +111,52 @@ const ActivityPage = () => {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-1000 max-w-full overflow-x-hidden">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl sm:text-3xl font-bold tracking-tight">Activity Feed</h2>
           <p className="text-white/50 mt-1">Real-time log of all player events and system activity.</p>
         </div>
-        <select
-          value={filterType}
-          onChange={(e) => setFilterType(e.target.value)}
-          className="bg-slate-900 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-prime/50 w-auto [color-scheme:dark]"
-        >
-          <option value="">All Events</option>
-          <option value="game">Games</option>
-          <option value="purchase">Purchases</option>
-          <option value="reward">Rewards</option>
-          <option value="friend">Friends</option>
-          <option value="notification">Notifications</option>
-        </select>
+        <div className="relative w-full md:w-64" ref={dropdownRef}>
+          <button
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            className="w-full bg-slate-900/50 backdrop-blur-md border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white flex items-center justify-between focus:outline-none focus:border-prime/50 transition-all hover:bg-white/5 group"
+          >
+            <span className="font-medium">{filterOptions.find(opt => opt.id === filterType)?.label || 'All Events'}</span>
+            <ChevronDown size={16} className={`text-white/40 group-hover:text-white transition-transform duration-300 ${isDropdownOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          <AnimatePresence>
+            {isDropdownOpen && (
+              <M.div
+                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                className="absolute left-0 md:left-auto md:right-0 top-full mt-2 w-full min-w-[160px] glass-card border border-white/10 z-[70] shadow-[0_10px_30px_rgba(0,0,0,0.5)] overflow-hidden"
+              >
+                <div className="p-1.5 space-y-0.5">
+                  {filterOptions.map((opt) => (
+                    <button
+                      key={opt.id}
+                      onClick={() => {
+                        setFilterType(opt.id);
+                        setIsDropdownOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-2.5 text-sm rounded-lg transition-all duration-200 ${
+                        filterType === opt.id 
+                          ? 'bg-prime/20 text-prime font-bold shadow-[inset_0_0_10px_rgba(168,85,247,0.1)]' 
+                          : 'text-white/60 hover:bg-white/5 hover:text-white'
+                      }`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </M.div>
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
       {error && (
@@ -140,7 +191,7 @@ const ActivityPage = () => {
                     <IconComp size={18} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-white group-hover:text-prime transition-colors">{event.title || event.type}</p>
+                    <p className="font-medium text-white group-hover:text-prime transition-colors truncate">{event.title || event.type}</p>
                     <p className="text-xs text-white/30 mt-1 truncate">
                       User: {event.userId?.substring(0, 8)}...
                     </p>
