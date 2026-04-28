@@ -300,18 +300,15 @@ const PlayersPage = () => {
     try {
       const payload = {};
 
-      // Ensure we send both variants (name/username, contact/phone) 
-      // just in case the Swagger API expects the backend database schema names.
+      // Ensure we send only the fields supported by the backend schema
       if (editForm.name) {
         payload.name = editForm.name;
-        payload.username = editForm.name;
       }
       if (editForm.email) {
         payload.email = editForm.email;
       }
       if (editForm.contact) {
         payload.contact = editForm.contact;
-        payload.phone = editForm.contact;
       }
       if (editForm.profileImage !== undefined && editForm.profileImage !== '') {
         payload.profileImage = Number(editForm.profileImage);
