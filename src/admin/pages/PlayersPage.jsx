@@ -300,18 +300,12 @@ const PlayersPage = () => {
     try {
       const payload = {};
 
-      // Ensure we send both variants (name/username, contact/phone) 
-      // just in case the Swagger API expects the backend database schema names.
+      // Ensure we send only the fields supported by the backend schema
       if (editForm.name) {
         payload.name = editForm.name;
-        payload.username = editForm.name;
-      }
-      if (editForm.email) {
-        payload.email = editForm.email;
       }
       if (editForm.contact) {
         payload.contact = editForm.contact;
-        payload.phone = editForm.contact;
       }
       if (editForm.profileImage !== undefined && editForm.profileImage !== '') {
         payload.profileImage = Number(editForm.profileImage);
@@ -491,15 +485,15 @@ const PlayersPage = () => {
                             placeholder="Player name"
                           />
                         </div>
-                        <div className="space-y-1.5">
-                          <label className="flex items-center gap-2 text-xs text-white/40 font-medium">
-                            <Mail size={12} /> Email
+                        <div className="space-y-1.5 opacity-60">
+                          <label className="flex items-center gap-2 text-xs text-white/40 font-medium" title="Email updates are currently not supported">
+                            <Mail size={12} /> Email (Uneditable)
                           </label>
                           <input
                             type="email"
                             value={editForm.email}
-                            onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
-                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-prime/50 transition-all"
+                            disabled
+                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white/50 cursor-not-allowed"
                             placeholder="Email address"
                           />
                         </div>
