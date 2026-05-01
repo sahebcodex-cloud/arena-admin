@@ -255,7 +255,6 @@ const PlayersPage = () => {
       }
 
       await authService.giftUser(id, payload);
-
       if (playerDetails) {
         const updatedWallets = [...(playerDetails.wallets || [])];
         if (updatedWallets[0]) {
