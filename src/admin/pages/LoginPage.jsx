@@ -47,6 +47,7 @@ const LoginPage = ({ onLogin }) => {
       
       {/* Login Card */}
       <div className="glass-card w-full max-w-md p-6 sm:p-10 space-y-6 sm:space-y-8 relative group">
+        
         {/* Header */}
         <div className="text-center space-y-3">
           <div className="flex justify-center mb-4 sm:mb-6">

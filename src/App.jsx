@@ -8,7 +8,7 @@ import authService from './admin/services/authService';
 // Always show the login page on the root path, removing auto-login
 const PublicRoute = ({ onLogin }) => {
   // Clear the session here so that opening the login page guarantees a fresh start
-  authService.logout(); 
+  authService.logout();
   return <LoginPage onLogin={onLogin} />;
 };
 

@@ -24,7 +24,7 @@ export const AdminProvider = ({ children }) => {
       // 1. Initial immediate sync from localStorage for immediate (stale) data
       const userData = authService.getUser();
       const cachedStats = authService.getDashboardData();
-      
+
       setUser(userData);
       setDashboardData(cachedStats);
 
@@ -40,14 +40,14 @@ export const AdminProvider = ({ children }) => {
         setLoading(false);
       }
     };
-    
+
     initialize();
   }, []);
 
   const login = useCallback(async (email, password) => {
     const response = await authService.login(email, password);
     refreshData();
-    
+
     // Immediately fetch fresh stats so the dashboard populates right away
     try {
       const freshOverview = await authService.getOverview();
@@ -55,12 +55,12 @@ export const AdminProvider = ({ children }) => {
     } catch (err) {
       console.error('Failed to fetch dashboard data after login:', err);
     }
-    
+
     return response;
   }, [refreshData]);
 
-  const logout = useCallback(() => {
-    authService.logout(); // clears sessionStorage (all auth data for this tab)
+  const logout = useCallback(async () => {
+    await authService.logout(); // calls backend + clears sessionStorage
     setUser(null);
     setDashboardData(null);
     navigate('/', { replace: true });

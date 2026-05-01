@@ -186,9 +186,15 @@ const authService = {
 
 
   /**
-   * Logout the admin — clears only this tab's sessionStorage
+   * Logout the admin — tells backend to invalidate tokens, then clears local session
    */
-  logout: () => {
+  logout: async () => {
+    try {
+      const refreshToken = sessionStorage.getItem('admin_refresh_token');
+      await api.post('/admin/logout', { refreshToken });
+    } catch {
+      // Ignore API errors, we always want to clear local session regardless
+    }
     sessionStorage.clear();
   },
 
@@ -298,10 +304,10 @@ const authService = {
   },
 
 
-    
 
 
-  
+
+
 
   /**
    * Get player's wallets

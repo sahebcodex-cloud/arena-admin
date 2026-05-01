@@ -22,14 +22,14 @@ const Header = memo(({ activeTab, onMenuClick, sidebarOpen }) => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     navigate('/');
   };
 
   return (
     <header className="h-16 sm:h-20 flex items-center justify-between px-4 sm:px-6 lg:px-8 bg-transparent relative z-[60] border-b border-white/5">
-      
+
       {/* Left: Hamburger (mobile) + Breadcrumbs */}
       <div className={`flex items-center gap-3 transition-opacity duration-300 ${sidebarOpen ? 'opacity-0 lg:opacity-100 pointer-events-none lg:pointer-events-auto' : ''}`}>
         {/* Hamburger — only on mobile/tablet */}

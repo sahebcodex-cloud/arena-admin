@@ -3,6 +3,23 @@ import { Search, Loader2, Wallet, Coins, ArrowRight, Activity, CheckCircle2 } fr
 import { motion as M, AnimatePresence } from 'framer-motion';
 import authService from '../services/authService';
 
+import avatar0 from '../../assets/call-of-duty-0.png';
+import avatar1 from '../../assets/call-of-duty-1.png';
+import avatar2 from '../../assets/call-of-duty-2.png';
+import avatar3 from '../../assets/call-of-duty-3.png';
+import avatar4 from '../../assets/call-of-duty-4.png';
+import avatar5 from '../../assets/call-of-duty-5.png';
+
+const AVATARS = [avatar0, avatar1, avatar2, avatar3, avatar4, avatar5];
+
+const getAvatarImage = (profileImageId) => {
+  const index = Number(profileImageId);
+  if (!isNaN(index) && index >= 0 && index < AVATARS.length) {
+    return AVATARS[index];
+  }
+  return AVATARS[0];
+};
+
 // Utility for safe property access
 const safeGet = (obj, mainKey, fallbackKeys, defaultVal) => {
   if (!obj) return defaultVal;
@@ -18,6 +35,7 @@ const WalletPlayerRow = memo(({ player, isExpanded, isLast, lastElementRef, onWa
   const id = safeGet(player, 'id', ['_id', 'userId'], '');
   const name = safeGet(player, 'name', ['username'], 'Unknown');
   const email = safeGet(player, 'email', [], 'No email');
+  const profileImage = safeGet(player, 'profileImage', [], 0);
 
   return (
     <div ref={isLast ? lastElementRef : null} className={`flex flex-col transition-all duration-300 ${isExpanded ? 'bg-white/[0.03]' : ''}`}>
@@ -26,7 +44,7 @@ const WalletPlayerRow = memo(({ player, isExpanded, isLast, lastElementRef, onWa
         <div className="col-span-5 flex items-center gap-4">
           <div className="w-12 h-12 md:w-10 md:h-10 rounded-full border border-prime/30 overflow-hidden bg-white/5 group-hover:scale-110 transition-transform flex-shrink-0">
             <img
-              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`}
+              src={getAvatarImage(profileImage)}
               alt={name}
               className="w-full h-full object-cover"
             />
@@ -184,7 +202,7 @@ const WalletPage = () => {
         setWalletData(null);
         return null;
       }
-      
+
       const fetchWallet = async () => {
         setWalletLoading(true);
         try {
@@ -198,7 +216,7 @@ const WalletPage = () => {
           setWalletLoading(false);
         }
       };
-      
+
       fetchWallet();
       return id;
     });

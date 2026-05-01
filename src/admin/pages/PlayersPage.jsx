@@ -3,6 +3,23 @@ import { Search, Filter, MoreVertical, Copy, CheckCircle2, X, Gamepad2, Coins, Z
 import { motion as M, AnimatePresence } from 'framer-motion';
 import authService from '../services/authService';
 
+import avatar0 from '../../assets/call-of-duty-0.png';
+import avatar1 from '../../assets/call-of-duty-1.png';
+import avatar2 from '../../assets/call-of-duty-2.png';
+import avatar3 from '../../assets/call-of-duty-3.png';
+import avatar4 from '../../assets/call-of-duty-4.png';
+import avatar5 from '../../assets/call-of-duty-5.png';
+
+const AVATARS = [avatar0, avatar1, avatar2, avatar3, avatar4, avatar5];
+
+const getAvatarImage = (profileImageId) => {
+  const index = Number(profileImageId);
+  if (!isNaN(index) && index >= 0 && index < AVATARS.length) {
+    return AVATARS[index];
+  }
+  return AVATARS[0];
+};
+
 // Utility for safe property access
 const safeGet = (obj, mainKey, fallbackKeys, defaultVal) => {
   if (!obj) return defaultVal;
@@ -15,7 +32,7 @@ const safeGet = (obj, mainKey, fallbackKeys, defaultVal) => {
 
 // Memoized Player Row Component
 const PlayerRow = memo(({ player, isLast, lastElementRef, onPlayerClick, onCopyToken, isCopied }) => {
-  const { id, name, email, role } = player;
+  const { id, name, email, role, profileImage } = player;
   const shortId = id ? id.substring(0, 8) + '...' : 'N/A';
 
   return (
@@ -29,7 +46,7 @@ const PlayerRow = memo(({ player, isLast, lastElementRef, onPlayerClick, onCopyT
         <div className="flex items-center gap-3 md:gap-4 min-w-0">
           <div className="w-10 h-10 rounded-full border border-prime/30 overflow-hidden bg-white/5 group-hover:scale-110 transition-transform flex-shrink-0">
             <img
-              src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${name}`}
+              src={getAvatarImage(profileImage)}
               alt={name}
               className="w-full h-full object-cover"
             />
@@ -127,7 +144,7 @@ const PlayersPage = () => {
 
   // Gift modal state
   const [isGiftModalOpen, setIsGiftModalOpen] = useState(false);
-  const [giftForm, setGiftForm] = useState({ silver: 0, gold: 0, diamond: 0 });
+  const [giftForm, setGiftForm] = useState({ silver: 0, coins: 0, diamond: 0 });
   const [gifting, setGifting] = useState(false);
 
   const fetchPlayers = useCallback(async (currentPage = 1, search = '', append = false) => {
@@ -238,7 +255,7 @@ const PlayersPage = () => {
       }
 
       await authService.giftUser(id, payload);
-      
+
       if (playerDetails) {
         const updatedWallets = [...(playerDetails.wallets || [])];
         if (updatedWallets[0]) {
@@ -251,7 +268,7 @@ const PlayersPage = () => {
 
       alert("Gift sent successfully!");
       setIsGiftModalOpen(false);
-      setGiftForm({ silver: 0, gold: 0, diamond: 0 });
+      setGiftForm({ silver: 0, coins: 0, diamond: 0 });
     } catch (err) {
       alert(`Gifting failed: ${err.message}`);
     } finally {
@@ -458,7 +475,7 @@ const PlayersPage = () => {
                   <div className="flex items-center gap-4">
                     <div className="w-14 h-14 rounded-2xl border-2 border-prime/30 bg-white/5 overflow-hidden flex-shrink-0">
                       <img
-                        src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${safeGet(playerDetails, 'name', ['username'], 'User')}`}
+                        src={getAvatarImage(safeGet(playerDetails, 'profileImage', [], safeGet(selectedPlayer, 'profileImage', [], 0)))}
                         alt="Avatar"
                         className="w-full h-full object-cover"
                       />
@@ -620,18 +637,12 @@ const PlayersPage = () => {
                             <h4 className="text-[10px] font-bold text-white/60 uppercase tracking-widest mb-2 flex items-center gap-1.5">
                               <Coins size={12} className="text-yellow-400" /> Wallet Balances
                             </h4>
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+                            <div className="grid grid-cols-3 gap-1.5">
                               {/* Diamond */}
                               <div className="p-2 bg-white/[0.02] border border-white/5 rounded-lg flex flex-col items-center justify-center gap-1 group hover:bg-white/[0.04] transition-all">
                                 <Gem size={14} className="text-blue-400" />
                                 <p className="text-xs font-bold text-white">{playerDetails?.wallets?.[0]?.diamond ?? playerDetails?.wallet?.diamond ?? 0}</p>
                                 <p className="text-[7px] text-white/30 uppercase tracking-widest font-bold">Diamond</p>
-                              </div>
-                              {/* Gold */}
-                              <div className="p-2 bg-white/[0.02] border border-white/5 rounded-lg flex flex-col items-center justify-center gap-1 group hover:bg-white/[0.04] transition-all">
-                                <Crown size={14} className="text-yellow-500" />
-                                <p className="text-xs font-bold text-white">{playerDetails?.wallets?.[0]?.gold ?? playerDetails?.wallet?.gold ?? 0}</p>
-                                <p className="text-[7px] text-white/30 uppercase tracking-widest font-bold">Gold</p>
                               </div>
                               {/* Silver */}
                               <div className="p-2 bg-white/[0.02] border border-white/5 rounded-lg flex flex-col items-center justify-center gap-1 group hover:bg-white/[0.04] transition-all">
@@ -660,7 +671,7 @@ const PlayersPage = () => {
                         </div>
                         <button
                           onClick={() => {
-                            setGiftForm({ silver: 0, gold: 0, diamond: 0 });
+                            setGiftForm({ silver: 0, coins: 0, diamond: 0 });
                             setIsGiftModalOpen(true);
                           }}
                           className="w-full flex items-center justify-center gap-1.5 py-2.5 bg-prime/10 border border-prime/20 text-prime rounded-lg text-[11px] font-bold hover:bg-prime hover:text-white transition-all duration-300 group mb-2"
@@ -710,10 +721,10 @@ const PlayersPage = () => {
                   </div>
                   <div>
                     <h3 className="text-sm font-bold text-white leading-none">Gift Player Items</h3>
-                    <p className="text-[10px] text-white/40 mt-1">Add Gold, Silver, or Diamonds</p>
+                    <p className="text-[10px] text-white/40 mt-1">Add Coins, Silver, or Diamonds</p>
                   </div>
                 </div>
-                <button 
+                <button
                   onClick={() => setIsGiftModalOpen(false)}
                   className="p-1.5 hover:bg-white/5 rounded-lg transition-colors text-white/40 hover:text-white"
                 >
@@ -733,23 +744,23 @@ const PlayersPage = () => {
                       value={giftForm.diamond || ''}
                       onChange={(e) => {
                         const val = e.target.value.replace(/\D/g, '');
-                        setGiftForm({...giftForm, diamond: val ? parseInt(val) : 0});
+                        setGiftForm({ ...giftForm, diamond: val ? parseInt(val) : 0 });
                       }}
                       placeholder="0"
                       className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-prime/50 focus:bg-white/[0.05] transition-all placeholder:text-white/10"
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-bold text-yellow-500 uppercase tracking-widest flex items-center gap-1">
-                      <Crown size={10} /> Gold
+                    <label className="text-[10px] font-bold text-prime uppercase tracking-widest flex items-center gap-1">
+                      <Zap size={10} /> Coins
                     </label>
                     <input
                       type="text"
                       inputMode="numeric"
-                      value={giftForm.gold || ''}
+                      value={giftForm.coins || ''}
                       onChange={(e) => {
                         const val = e.target.value.replace(/\D/g, '');
-                        setGiftForm({...giftForm, gold: val ? parseInt(val) : 0});
+                        setGiftForm({ ...giftForm, coins: val ? parseInt(val) : 0 });
                       }}
                       placeholder="0"
                       className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-prime/50 focus:bg-white/[0.05] transition-all placeholder:text-white/10"
@@ -765,7 +776,7 @@ const PlayersPage = () => {
                       value={giftForm.silver || ''}
                       onChange={(e) => {
                         const val = e.target.value.replace(/\D/g, '');
-                        setGiftForm({...giftForm, silver: val ? parseInt(val) : 0});
+                        setGiftForm({ ...giftForm, silver: val ? parseInt(val) : 0 });
                       }}
                       placeholder="0"
                       className="w-full bg-white/[0.03] border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-prime/50 focus:bg-white/[0.05] transition-all placeholder:text-white/10"
