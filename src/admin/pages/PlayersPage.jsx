@@ -291,7 +291,7 @@ const PlayersPage = () => {
         name: details.name || details.username || '',
         email: details.email || '',
         contact: details.contact || details.phone || '',
-        profileImage: details.profileImage || 1,
+        profileImage: details.profileImage !== undefined ? Number(details.profileImage) : 0,
       });
     } catch {
       // Fallback to basic player data from list
@@ -300,7 +300,7 @@ const PlayersPage = () => {
         name: player.name || player.username || '',
         email: player.email || '',
         contact: player.contact || player.phone || '',
-        profileImage: player.profileImage || 1,
+        profileImage: player.profileImage !== undefined ? Number(player.profileImage) : 0,
       });
     } finally {
       setDetailLoading(false);
@@ -528,18 +528,33 @@ const PlayersPage = () => {
                             placeholder="Phone number"
                           />
                         </div>
-                        <div className="space-y-1.5">
-                          <label className="flex items-center gap-2 text-xs text-white/40 font-medium">
-                            <Image size={12} /> Profile Image (1-6)
+                        <div className="space-y-3 col-span-1 sm:col-span-2 bg-white/[0.02] border border-white/5 p-4 rounded-2xl">
+                          <label className="flex items-center gap-2 text-[10px] font-bold text-white/40 uppercase tracking-widest">
+                            <Image size={12} className="text-prime" /> Choose Profile Avatar
                           </label>
-                          <input
-                            type="number"
-                            min="1"
-                            max="6"
-                            value={editForm.profileImage}
-                            onChange={(e) => setEditForm({ ...editForm, profileImage: e.target.value })}
-                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-prime/50 transition-all"
-                          />
+                          <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
+                            {AVATARS.map((avatar, index) => (
+                              <button
+                                key={index}
+                                type="button"
+                                onClick={() => setEditForm({ ...editForm, profileImage: index })}
+                                className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all duration-300 ${
+                                  Number(editForm.profileImage) === index 
+                                  ? 'border-prime ring-4 ring-prime/20 scale-95' 
+                                  : 'border-white/5 hover:border-white/20 grayscale hover:grayscale-0'
+                                }`}
+                              >
+                                <img src={avatar} alt={`Avatar ${index}`} className="w-full h-full object-cover" />
+                                {Number(editForm.profileImage) === index && (
+                                  <div className="absolute inset-0 bg-prime/10 flex items-center justify-center">
+                                    <div className="bg-prime text-black p-0.5 rounded-full shadow-lg">
+                                      <CheckCircle2 size={12} />
+                                    </div>
+                                  </div>
+                                )}
+                              </button>
+                            ))}
+                          </div>
                         </div>
                       </div>
 
